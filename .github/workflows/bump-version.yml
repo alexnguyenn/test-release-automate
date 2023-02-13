@@ -1,0 +1,64 @@
+name: Bump version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver type of new version (major / minor / patch)'
+        required: true
+        type: choice
+        options: 
+        - patch
+        - minor
+        - major
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get next version
+        id: next-version
+        run: |
+          current_tag=$(git describe --tags --abbrev=0)
+          major=$(echo $current_tag | cut -dv -f2 | cut -d. -f1)
+          minor=$(echo $current_tag | cut -dv -f2 | cut -d. -f2)
+          patch=$(echo $current_tag | cut -dv -f2 | cut -d. -f3)
+          case ${{ github.event.inputs.bump_type }} in
+            major)
+              next_major=$((major + 1))
+              next_version="${next_major}.0.0"
+              ;;
+            minor)
+              next_minor=$((minor + 1))
+              next_version="${major}.${next_minor}.0"
+              ;;
+            patch)
+              next_patch=$((patch + 1))
+              next_version="${major}.${minor}.${next_patch}"
+              ;;
+            *)
+              echo "Invalid bump type: ${{ github.event.inputs.bump_type }}"
+              exit 1
+              ;;
+          esac
+          echo "Next version is ${next_version}"
+          echo "NEXT_VERSION=${next_version}" >> $GITHUB_ENV
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - name: Setup Git
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+      - name: Bump npm version 
+        run: npm version "${{ env.NEXT_VERSION }}"
+
+      - name: Push to Github
+        run: git push origin main --follow-tags
