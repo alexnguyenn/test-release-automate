@@ -59,17 +59,19 @@ jobs:
         with:
           node-version: '16'
 
-      - name: Bump npm version 
+      - name: Bump npm package version 
         run: npm version "${{ env.NEXT_VERSION }}" --no-git-tag-version
 
       - name: Create a new PR
         uses: peter-evans/create-pull-request@v4
         with:
-          commit-message: Bumping to v${{ env.NEXT_VERSION }}
+          commit-message: Bumping package to v${{ env.NEXT_VERSION }}
           branch: releases/v${{ env.NEXT_VERSION }}
           delete-branch: true
-          title: 'Bumping to v${{ env.NEXT_VERSION }}'
+          title: 'Bumping package to v${{ env.NEXT_VERSION }}'
           body: |
-            As title
+            This PR bumps the version of the package to v${{ env.NEXT_VERSION }} (${{ github.event.inputs.version }}). 
+            
+            *Triggered by @${{ github.actor }}*
           reviewers: alexnguyenn
-
+          labels: releases
